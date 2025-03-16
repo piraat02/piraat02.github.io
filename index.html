@@ -5,56 +5,100 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Snake Game</title>
     <style>
-        body {
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        html, body {
+            height: 100%;
+            overflow: hidden;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
             background-color: #222;
+            position: relative;
         }
         canvas {
             background-color: #000;
         }
+        #fullscreenButton {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background-color: #333;
+            color: #fff;
+            border: none;
+            padding: 10px;
+            cursor: pointer;
+            z-index: 10;
+        }
+        #fullscreenMessage {
+            position: fixed;
+            top: 50px;
+            left: 10px;
+            color: #fff;
+            font-size: 16px;
+            z-index: 10;
+        }
     </style>
 </head>
 <body>
+    <button id="fullscreenButton">Go Fullscreen</button>
+    <div id="fullscreenMessage">Press "F" to toggle fullscreen mode</div>
     <canvas id="gameCanvas" width="400" height="400"></canvas>
     <script>
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
+        const fullscreenButton = document.getElementById("fullscreenButton");
+        const fullscreenMessage = document.getElementById("fullscreenMessage");
         
-        let snake = [{ x: 200, y: 200 }];
-        let direction = "RIGHT";
-        let food = { x: Math.floor(Math.random() * 20) * 20, y: Math.floor(Math.random() * 20) * 20 };
+        const gridSize = 20;
+        let snake, direction, food;
+        
+        function resetGame() {
+            snake = [{ x: 200, y: 200 }];
+            direction = "";
+            food = { x: Math.floor(Math.random() * 20) * gridSize, y: Math.floor(Math.random() * 20) * gridSize };
+        }
         
         function draw() {
-            ctx.fillStyle = "black";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            // Clear the entire canvas before drawing a new frame
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
             
+            // Draw the border
+            ctx.strokeStyle = "white";
+            ctx.lineWidth = 2;
+            ctx.strokeRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw the food
             ctx.fillStyle = "red";
-            ctx.fillRect(food.x, food.y, 20, 20);
+            ctx.fillRect(food.x, food.y, gridSize, gridSize);
             
+            // Draw the snake
             ctx.fillStyle = "lime";
-            snake.forEach(segment => ctx.fillRect(segment.x, segment.y, 20, 20));
+            snake.forEach(segment => ctx.fillRect(segment.x, segment.y, gridSize, gridSize));
         }
         
         function move() {
             let head = { ...snake[0] };
-            if (direction === "UP") head.y -= 20;
-            if (direction === "DOWN") head.y += 20;
-            if (direction === "LEFT") head.x -= 20;
-            if (direction === "RIGHT") head.x += 20;
+            if (direction === "UP") head.y -= gridSize;
+            if (direction === "DOWN") head.y += gridSize;
+            if (direction === "LEFT") head.x -= gridSize;
+            if (direction === "RIGHT") head.x += gridSize;
             
+            // Check for collision with food
             if (head.x === food.x && head.y === food.y) {
-                food = { x: Math.floor(Math.random() * 20) * 20, y: Math.floor(Math.random() * 20) * 20 };
+                food = { x: Math.floor(Math.random() * 20) * gridSize, y: Math.floor(Math.random() * 20) * gridSize };
             } else {
                 snake.pop();
             }
             
+            // Check for collision with walls or self
             if (head.x < 0 || head.x >= canvas.width || head.y < 0 || head.y >= canvas.height ||
                 snake.some(segment => segment.x === head.x && segment.y === head.y)) {
-                alert("Game Over!");
-                document.location.reload();
+                resetGame();
+                return;
             }
             
             snake.unshift(head);
@@ -75,6 +119,44 @@
             draw();
         }
         
+        function goFullscreen() {
+            if (!document.fullscreenElement) {
+                if (canvas.requestFullscreen) {
+                    canvas.requestFullscreen();
+                } else if (canvas.mozRequestFullScreen) { // Firefox
+                    canvas.mozRequestFullScreen();
+                } else if (canvas.webkitRequestFullscreen) { // Chrome, Safari and Opera
+                    canvas.webkitRequestFullscreen();
+                } else if (canvas.msRequestFullscreen) { // IE/Edge
+                    canvas.msRequestFullscreen();
+                }
+                fullscreenButton.textContent = "Exit Fullscreen";
+                fullscreenMessage.textContent = 'Press "F" to exit fullscreen';
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.mozCancelFullScreen) { // Firefox
+                    document.mozCancelFullScreen();
+                } else if (document.webkitExitFullscreen) { // Chrome, Safari and Opera
+                    document.webkitExitFullscreen();
+                } else if (document.msExitFullscreen) { // IE/Edge
+                    document.msExitFullscreen();
+                }
+                fullscreenButton.textContent = "Go Fullscreen";
+                fullscreenMessage.textContent = 'Press "F" to enter fullscreen';
+            }
+        }
+
+        fullscreenButton.addEventListener("click", goFullscreen);
+
+        // Add event listener for "F" key to toggle fullscreen
+        document.addEventListener("keydown", function(event) {
+            if (event.key === "f" || event.key === "F") {
+                goFullscreen();
+            }
+        });
+        
+        resetGame();
         setInterval(gameLoop, 150);
     </script>
 </body>
