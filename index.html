@@ -5,159 +5,94 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Snake Game</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        html, body {
-            height: 100%;
-            overflow: hidden;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background-color: #222;
-            position: relative;
-        }
-        canvas {
-            background-color: #000;
-        }
-        #fullscreenButton {
-            position: fixed;
-            top: 10px;
-            left: 10px;
-            background-color: #333;
-            color: #fff;
-            border: none;
-            padding: 10px;
-            cursor: pointer;
-            z-index: 10;
-        }
-        #fullscreenMessage {
-            position: fixed;
-            top: 50px;
-            left: 10px;
-            color: #fff;
-            font-size: 16px;
-            z-index: 10;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { height: 100%; overflow: hidden; display: flex; justify-content: center; align-items: center; background: #222; }
+        canvas { background: #000; }
+        button { position: fixed; top: 10px; left: 10px; color: #fff; font-size: 16px; z-index: 10; background: #333; padding: 10px; cursor: pointer; }
+        .title-screen { color: white; font-size: 32px; text-align: center; z-index: 10; position: fixed; top: 40%; }
+        .title-screen button { margin-top: 20px; padding: 10px 20px; font-size: 16px; cursor: pointer; background: #333; color: white; border: none; }
     </style>
 </head>
 <body>
-    <button id="fullscreenButton">Go Fullscreen</button>
-    <div id="fullscreenMessage">Press "F" to toggle fullscreen mode</div>
-    <canvas id="gameCanvas" width="400" height="400"></canvas>
+    <div id="titleScreen" class="title-screen">
+        <h1>Snake Game</h1>
+        <button id="startButton">Start Game</button>
+    </div>
+    <button id="fullscreenButton" style="display: none;">Fullscreen 'F'</button>
+    <canvas id="gameCanvas" width="400" height="400" style="display: none;"></canvas>
     <script>
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
+        const startButton = document.getElementById("startButton");
+        const titleScreen = document.getElementById("titleScreen");
         const fullscreenButton = document.getElementById("fullscreenButton");
-        const fullscreenMessage = document.getElementById("fullscreenMessage");
-        
         const gridSize = 20;
-        let snake, direction, food;
-        
+        let snake = [{ x: 200, y: 200 }], direction = "", food;
+
         function resetGame() {
             snake = [{ x: 200, y: 200 }];
             direction = "";
             food = { x: Math.floor(Math.random() * 20) * gridSize, y: Math.floor(Math.random() * 20) * gridSize };
         }
-        
+
         function draw() {
-            // Clear the entire canvas before drawing a new frame
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // Draw the border
             ctx.strokeStyle = "white";
             ctx.lineWidth = 2;
             ctx.strokeRect(0, 0, canvas.width, canvas.height);
-            
-            // Draw the food
             ctx.fillStyle = "red";
             ctx.fillRect(food.x, food.y, gridSize, gridSize);
-            
-            // Draw the snake
             ctx.fillStyle = "lime";
             snake.forEach(segment => ctx.fillRect(segment.x, segment.y, gridSize, gridSize));
         }
-        
+
         function move() {
             let head = { ...snake[0] };
             if (direction === "UP") head.y -= gridSize;
             if (direction === "DOWN") head.y += gridSize;
             if (direction === "LEFT") head.x -= gridSize;
             if (direction === "RIGHT") head.x += gridSize;
-            
-            // Check for collision with food
+
             if (head.x === food.x && head.y === food.y) {
                 food = { x: Math.floor(Math.random() * 20) * gridSize, y: Math.floor(Math.random() * 20) * gridSize };
-            } else {
-                snake.pop();
-            }
-            
-            // Check for collision with walls or self
-            if (head.x < 0 || head.x >= canvas.width || head.y < 0 || head.y >= canvas.height ||
-                snake.some(segment => segment.x === head.x && segment.y === head.y)) {
+            } else snake.pop();
+
+            if (head.x < 0 || head.x >= canvas.width || head.y < 0 || head.y >= canvas.height || snake.some(segment => segment.x === head.x && segment.y === head.y)) {
                 resetGame();
                 return;
             }
-            
             snake.unshift(head);
         }
-        
-        function changeDirection(event) {
+
+        document.addEventListener("keydown", (event) => {
             const key = event.key;
             if (key === "ArrowUp" && direction !== "DOWN") direction = "UP";
             if (key === "ArrowDown" && direction !== "UP") direction = "DOWN";
             if (key === "ArrowLeft" && direction !== "RIGHT") direction = "LEFT";
             if (key === "ArrowRight" && direction !== "LEFT") direction = "RIGHT";
-        }
-        
-        document.addEventListener("keydown", changeDirection);
-        
-        function gameLoop() {
-            move();
-            draw();
-        }
-        
+            if (key === "f" || key === "F") goFullscreen();
+        });
+
+        function gameLoop() { move(); draw(); }
         function goFullscreen() {
             if (!document.fullscreenElement) {
-                if (canvas.requestFullscreen) {
-                    canvas.requestFullscreen();
-                } else if (canvas.mozRequestFullScreen) { // Firefox
-                    canvas.mozRequestFullScreen();
-                } else if (canvas.webkitRequestFullscreen) { // Chrome, Safari and Opera
-                    canvas.webkitRequestFullscreen();
-                } else if (canvas.msRequestFullscreen) { // IE/Edge
-                    canvas.msRequestFullscreen();
-                }
+                canvas.requestFullscreen ? canvas.requestFullscreen() : document.documentElement.requestFullscreen();
                 fullscreenButton.textContent = "Exit Fullscreen";
-                fullscreenMessage.textContent = 'Press "F" to exit fullscreen';
             } else {
-                if (document.exitFullscreen) {
-                    document.exitFullscreen();
-                } else if (document.mozCancelFullScreen) { // Firefox
-                    document.mozCancelFullScreen();
-                } else if (document.webkitExitFullscreen) { // Chrome, Safari and Opera
-                    document.webkitExitFullscreen();
-                } else if (document.msExitFullscreen) { // IE/Edge
-                    document.msExitFullscreen();
-                }
-                fullscreenButton.textContent = "Go Fullscreen";
-                fullscreenMessage.textContent = 'Press "F" to enter fullscreen';
+                document.exitFullscreen();
+                fullscreenButton.textContent = "Fullscreen 'F'";
             }
         }
 
         fullscreenButton.addEventListener("click", goFullscreen);
 
-        // Add event listener for "F" key to toggle fullscreen
-        document.addEventListener("keydown", function(event) {
-            if (event.key === "f" || event.key === "F") {
-                goFullscreen();
-            }
+        startButton.addEventListener("click", () => {
+            titleScreen.style.display = "none";
+            canvas.style.display = "block";
+            fullscreenButton.style.display = "inline-block";
+            resetGame();
+            setInterval(gameLoop, 150);
         });
-        
-        resetGame();
-        setInterval(gameLoop, 150);
     </script>
 </body>
 </html>
